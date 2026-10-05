@@ -4,31 +4,38 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
-var requestCount = make(map[string]int)
+type RateLimitInfo struct {
+	Count     int
+	LastReset time.Time
+}
+
+var requestCount = make(map[string]RateLimitInfo)
 
 func rateLimiter(w http.ResponseWriter, r *http.Request) {
 
 	ip := strings.Split(r.RemoteAddr, ":")[0]
 
-	requestCount[ip]++
+	info := requestCount[ip]
 
-	if requestCount[ip] > 5 {
+	if info.LastReset.IsZero() || time.Since(info.LastReset) > time.Second*10 {
+		info.Count = 0
+		info.LastReset = time.Now()
+	}
+
+	info.Count++
+	requestCount[ip] = info
+
+	if info.Count > 6 {
 		w.WriteHeader(http.StatusTooManyRequests)
-		fmt.Fprintf(w, "terlalu banyak request %s", ip)
+		fmt.Fprintf(w, "terlalu banyak request dari IP %s", ip)
 		return
 	}
 
-	fmt.Fprintf(w, "hello request ke-%d dari ip %s", requestCount[ip], ip)
+	fmt.Fprintf(w, "hello request ke-%d dari ip %s", info.Count, ip)
 }
-
-/*
-// func handler
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello")
-}
-*/
 
 func main() {
 	//daftarkan route
