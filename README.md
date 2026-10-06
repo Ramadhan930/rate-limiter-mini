@@ -52,3 +52,43 @@ alur pikir:
    e. Jika info.Count > 5 → 429
    f. Simpan kembali info ke map
    g. Jika aman → tampilkan pesan
+
+Hari keempat:
+Setiap request dicatat ke file log.txt dengan format:
+```text
+[2026-10-05 14:30:22] IP: 127.0.0.1 | Request ke-3 | Status: OK
+[2026-10-05 14:30:25] IP: 127.0.0.1 | Request ke-7 | Status: BLOCKED
+```
+Alur kerja:
+1. Buat function terpisah: writeLog(ip string, count int, status string)
+2. Di function:
+   a. Buka file log.txt (append + create)
+   b. Format string: [waktu] IP: xxx | Request ke-x | Status: xxx
+   c. Tulis ke file
+   d. Tutup file
+3. Di handler rateLimiter:
+   a. Jika OK → panggil writeLog(ip, info.Count, "OK")
+   b. Jika BLOCKED → panggil writeLog(ip, info.Count, "BLOCKED")
+
+Hari kelima:
+Server yang bisa:
+1. Membaca query parameter dari URL.
+2. Mendeteksi pola berbahaya (SQL Injection sederhana).
+3. Memblokir IP yang terdeteksi menyerang.
+4. Menyimpan blacklist IP di memory.
+
+Alur kerja: 
+1. Buat map global: blacklist (map[string]bool)
+2. Buat function: isSQLInjection(input string) bool
+   - Cek apakah input mengandung pola berbahaya
+   - Return true jika mencurigakan
+3. Di handler rateLimiter, URUTANNYA:
+   a. Ambil IP
+   b. CEK BLACKLIST DULU → jika ada, langsung 403 Forbidden
+   c. Ambil query parameter "name"
+   d. Cek isSQLInjection(name) → jika ya, tambah ke blacklist + 403
+   e. Baru lanjut ke rate limiting (logika Hari 3-4)
+4. Function isSQLInjection:
+   - Lowercase input
+   - Cek pola: "or 1=1", "union select", "--", "' or"
+   - Return true jika ada yang cocok
