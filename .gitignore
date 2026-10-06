@@ -1,0 +1,17 @@
+# Log files
+*.log
+
+# Binary files
+rate-limiter-mini
+*.exe
+
+# Environment
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
